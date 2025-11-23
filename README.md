@@ -1,6 +1,7 @@
 # Vektiva Smarwi – Home Assistant Integration
 
-This custom integration allows you to control the **Vektiva Smarwi smart window opener** directly from [Home Assistant](https://www.home-assistant.io/).
+This custom integration allows you to control the [**Vektiva Smarwi smart window opener**](https://vektiva.com/index.php) directly from [Home Assistant](https://www.home-assistant.io/).
+
 
 The project was originally created by [cvrky](https://github.com/cvrky/vektiva_smarwi_ha) and has now been taken over and updated to work with current versions of Home Assistant.
 
