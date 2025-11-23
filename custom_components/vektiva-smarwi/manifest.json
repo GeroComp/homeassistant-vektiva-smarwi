@@ -1,0 +1,14 @@
+{
+  "domain": "vektiva_smarwi",
+  "name": "Vektiva Smarwi",
+  "version": "2025.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/GeroComp/homeassistant-vektiva-smarwi",
+  "requirements": ["aiohttp>=3.9.0"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": ["@TvojeGitHubJmeno"],
+  "logo": "logo.png"
+}
