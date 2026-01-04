@@ -19,10 +19,11 @@ It provides full local control over your windows via your Wi-Fi network, ensurin
 ---
 
 ## ✨ Features
-* **Full Control:** Open, Close, and Stop the window opener.
-* **Live Feedback:** Displays current state (open, closed, opening, closing).
-* **Multi-device Support:** Control as many Smarwi devices as you need.
-* **Local API:** Works strictly over your local network.
+* **🔌 Plug & Play:** Automatically discovers Smarwi devices on your network (DHCP & mDNS support).
+* **🪟 Full Control:** Open, Close, Stop, and set specific position (0-100%).
+* **🎨 Dynamic Icons:** Icons change automatically based on window state (Open/Closed/Tilt).
+* **⚡ Local API:** Works strictly over your local network (no cloud required).
+* **📊 Live Feedback:** Real-time updates of position and status.
 
 ---
 
@@ -35,7 +36,7 @@ The easiest way to install and keep the integration updated.
 2.  Click the **3 dots menu** (top right corner) → Select **Custom repositories**.
 3.  Paste the following URL into the Repository field:
     ```text
-    https://github.com/GeroComp/homeassistant-vektiva-smarwi.git
+    https://github.com/GeroComp/homeassistant-vektiva-smarwi
     ```
 4.  Select category: **Integration**.
 5.  Click **Add**, then find "Vektiva Smarwi" in the list and click **Download**.
@@ -51,49 +52,41 @@ The easiest way to install and keep the integration updated.
 
 ## ⚙️ Configuration
 
-To add the device, edit your `configuration.yaml` file.
+### Method A: Auto-Discovery (Easiest)
+Once installed and restarted, Home Assistant should automatically find your device.
 
-> **⚠️ Important Tip:** It is highly recommended to set a **Static IP address** for your Smarwi device in your router settings. If the IP address changes (via DHCP), Home Assistant will lose connection to the device.
+1.  Go to **Settings** → **Devices & Services**.
+2.  Look for the **"Discovered"** section.
+3.  Click **Configure** on the Vektiva Smarwi notification.
+4.  Confirm the setup. Done!
 
-Add the following lines to `configuration.yaml`:
+> **💡 IMPORTANT:** If the discovery notification does not appear immediately, **restart your Smarwi device** (unplug it from the power socket for 5 seconds and plug it back in). This forces the device to announce itself on the network, allowing Home Assistant to find it.
 
-```yaml
-cover:
-  - platform: vektiva_smarwi
-    host: 192.168.1.50    # Replace with your Smarwi's IP address
-    name: Kitchen Window  # Name shown in Home Assistant
-```
-Example for Multiple Devices
-If you own multiple Smarwi units, simply list them like this:
+### Method B: Manual Add via UI
+If the device is not discovered automatically (e.g., due to network setup):
 
+1.  Go to **Settings** → **Devices & Services**.
+2.  Click **+ ADD INTEGRATION** (bottom right).
+3.  Search for **Vektiva Smarwi**.
+4.  Enter the **IP address** of your device.
 
-```yaml
-cover:
-  - platform: vektiva_smarwi
-    host: 192.168.1.50
-    name: Kitchen
+> **⚠️ Tip:** It is highly recommended to set a **Static IP address** for your Smarwi device in your router settings. If the IP address changes (via DHCP), Home Assistant might lose connection to the device.
 
-  - platform: vektiva_smarwi
-    host: 192.168.1.51
-    name: Bedroom
-```
-> **Note:** After editing the configuration.yaml file, you must restart Home Assistant for the changes to take effect.
+---
 
 ## 🛠️ Troubleshooting
 
+### Auto-discovery not working?
+If Home Assistant doesn't find your device automatically:
+1.  **Restart Smarwi (Crucial Step):** Unplug the device from power and plug it back in. This is often required to trigger the discovery packet.
+2.  **Network:** Ensure your Home Assistant is on the **same network subnet** as the Smarwi device.
+3.  **Docker:** If running in Docker, you must use `network_mode: host` for discovery to work.
+4.  **Manual:** You can always add the device manually using its IP address (Method B).
+
 ### Device is unavailable?
-- **Check Connection:** Ensure the Smarwi is connected to Wi-Fi and has power.
-- **Verify IP:** Confirm the IP address in `configuration.yaml` matches the device's actual IP.
-- **Test Access:** Open the device’s IP address in a web browser. If the Smarwi web interface loads, the device is working correctly.
-
-### Window does not respond to commands?
-- **Restart Home Assistant:** After editing `configuration.yaml`, always restart Home Assistant.
-- **Static IP:** Make sure your router assigns a static IP to the Smarwi device.
-- **Network Issues:** Check if your local network firewall or router settings block communication.
-
-### Multiple devices not showing?
-- **YAML Formatting:** Ensure each device entry starts with a `-` under `cover:`.
-- **Indentation:** Use two spaces for indentation, not tabs.
+* **Check Connection:** Ensure the Smarwi is connected to Wi-Fi and has power.
+* **Verify IP:** Check if the IP address has changed in your router.
+* **Test Access:** Open the device’s IP address in a web browser. If the Smarwi web interface loads, the device is working correctly.
 
 ---
 
@@ -101,11 +94,9 @@ cover:
 
 This project exists thanks to the hard work of the original creators and the manufacturer.
 
-- **Original Creator:** Huge thanks to *cvrky* for the initial development of this Home Assistant integration. His work laid the foundation for this project.  
-- **Manufacturer:** Special thanks to *Vektiva* for designing the Smarwi hardware and providing an open API that makes integrations like this possible.  
-- **Maintenance:** Currently updated and maintained by *GeroComp*.  
-
-> **Community:** Made possible by the Home Assistant community — your ideas and contributions keep this project alive.
+* **Original Creator:** Huge thanks to **[cvrky](https://github.com/cvrky)** for the initial development of this Home Assistant integration.
+* **Manufacturer:** Special thanks to **[Vektiva](https://vektiva.com/)** for designing the **Smarwi** hardware and providing an open API.
+* **Maintenance:** Currently updated and maintained by **[GeroComp](https://github.com/GeroComp)**.
 
 ## 📜 License
 
