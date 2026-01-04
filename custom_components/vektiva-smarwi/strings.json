@@ -6,6 +6,10 @@
         "data": {
           "hosts": "[%key:common::config_flow::data::hosts%]"
         }
+      },
+      "discovery_confirm": {
+        "title": "Discovered Vektiva Smarwi",
+        "description": "Do you want to set up {name}?"
       }
     },
     "error": {

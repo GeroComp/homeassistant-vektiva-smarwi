@@ -11,18 +11,27 @@ class SmarwiControl:
 
     def __init__(self, hosts: str):
         """Initialize with comma-separated list of hosts."""
-        self.hosts = [x.strip() for x in hosts.split(",")]
-        self.title = ", ".join([x.split(".")[0] for x in self.hosts])
+        # Rozdělíme hosty, odstraníme mezery a duplicity
+        raw_list = hosts.split(",")
+        clean_list = [x.strip() for x in raw_list if x.strip()]
+        self.hosts = sorted(list(set(clean_list)))
+        
+        # OPRAVA: Použijeme celé IP adresy, ne jen první číslo
+        self.title = ", ".join(self.hosts)
 
     async def authenticate(self) -> bool:
         """Test if we can authenticate with all hosts."""
+        if not self.hosts:
+            return False
+            
         try:
-            for host in self.hosts:
-                ctl = SmarwiControlItem(host)
-                await ctl.get_status()
+            # Zkusíme se připojit k prvnímu hostovi
+            # (Timeout je důležitý, aby se HA nezasekl)
+            ctl = SmarwiControlItem(self.hosts[0])
+            await ctl.get_status()
             return True
         except Exception as err:
-            _LOGGER.error("Authentication failed: %s", err)
+            _LOGGER.error("Authentication failed for %s: %s", self.hosts[0], err)
             return False
 
     def list(self) -> list:
@@ -35,14 +44,17 @@ class SmarwiControlItem:
 
     def __init__(self, host: str):
         self.host = host
-        self.name = host.split(".")[0]
-        self.id = host  # unikátní identifikátor
+        self.name = f"Smarwi {host}"
+        # Unikátní ID s prefixem, aby nedocházelo ke kolizím
+        self.id = f"vektiva_{host.replace('.', '_')}"
         self.fw = None
 
     async def __request(self, path: str) -> str:
         """Send request to device and return response text."""
         url = f"http://{self.host}/{path}"
-        async with aiohttp.ClientSession() as session:
+        # Přidáme timeout, aby se vlákno nezaseklo
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
                     raise ValueError(f"Request failed with {resp.status}/{resp.reason}")
@@ -54,7 +66,7 @@ class SmarwiControlItem:
 
     async def set_position(self, pos: int):
         """Set window position (0–100)."""
-        if pos > 1:
+        if pos > 0:
             await self.__request(f"cmd/open/{pos}")
         else:
             await self.close()

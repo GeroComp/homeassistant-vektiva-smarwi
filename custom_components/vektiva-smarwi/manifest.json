@@ -1,16 +1,34 @@
 {
   "domain": "vektiva_smarwi",
   "name": "Vektiva Smarwi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "config_flow": true,
   "documentation": "https://github.com/GeroComp/homeassistant-vektiva-smarwi",
   "requirements": [
     "aiohttp>=3.9.0"
   ],
   "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "dependencies": [],
+  "zeroconf": [
+    {
+      "type": "_http._tcp.local.",
+      "name": "smarwi*"
+    },
+    {
+      "type": "_http._tcp.local.",
+      "name": "swr*"
+    }
+  ],
+  "dhcp": [
+    {
+      "macaddress": "bcddc2"
+    },
+    {
+      "hostname": "swr*"
+    },
+    {
+      "hostname": "smarwi*"
+    }
+  ],
   "codeowners": [
     "@GeroComp"
   ],
