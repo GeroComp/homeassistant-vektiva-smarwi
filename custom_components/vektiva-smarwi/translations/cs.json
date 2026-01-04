@@ -6,6 +6,10 @@
         "data": {
           "hosts": "Hostitelé nebo IP adresy (oddělené čárkou)"
         }
+      },
+      "discovery_confirm": {
+        "title": "Nalezeno Vektiva Smarwi",
+        "description": "Chcete nastavit nalezené zařízení {name}?"
       }
     },
     "error": {
