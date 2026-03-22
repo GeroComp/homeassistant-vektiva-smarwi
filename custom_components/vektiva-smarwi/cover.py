@@ -19,7 +19,7 @@ except ImportError:
 
 _LOGGER = logging.getLogger(__name__)
 
-MOVEMENT_DURATION = 17.0 
+MOVEMENT_DURATION = 12.0 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     voluptuous.Required(CONF_HOSTS): cv.string,
@@ -36,13 +36,13 @@ class VektivaSmarwi(CoverEntity):
         self._name = ctli.name
         self._id = ctli.id
         self._fw = None
+        self._current_position = 0
+        self._start_position = 0
+        self._closed = True
         self._opening = False
         self._closing = False
-        self._closed = True
-        self._current_position = 0
-        self._movement_start_time = 0
-        self._start_position_percentage = 0
         self._loop_task = None
+        self._movement_start_time = 0
         self._stop_task_scheduled = False
 
     @property
@@ -59,48 +59,38 @@ class VektivaSmarwi(CoverEntity):
         return CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.SET_POSITION | CoverEntityFeature.STOP
     
     @property
-    def current_cover_position(self):
-        if not (self._opening or self._closing): return self._current_position
-        elapsed = time.time() - self._movement_start_time
-        progress = elapsed / MOVEMENT_DURATION
-        if progress >= 1.0: progress = 1.0
-        if self._opening: est = self._start_position_percentage + (progress * (100 - self._start_position_percentage))
-        else: est = self._start_position_percentage - (progress * self._start_position_percentage)
-        return int(max(0, min(100, est)))
-    
+    def is_closed(self): return self._closed
     @property
     def is_opening(self): return self._opening
     @property
     def is_closing(self): return self._closing
     @property
-    def is_closed(self): return self._current_position == 0
+    def current_cover_position(self): return self._current_position
 
-    async def async_open_cover(self, **kwargs): await self._move(100)
-    async def async_close_cover(self, **kwargs): await self._move(0)
-    async def async_set_cover_position(self, **kwargs): await self._move(int(kwargs[ATTR_POSITION]))
+    async def async_open_cover(self, **kwargs): await self.async_set_cover_position(position=100)
+    async def async_close_cover(self, **kwargs): await self.async_set_cover_position(position=0)
     
     async def async_stop_cover(self, **kwargs):
+        await self._ctli.stop()
         if self._loop_task: self._loop_task.cancel()
         self._opening = False; self._closing = False
-        await self._ctli.stop()
         await self.async_update()
+        self.async_write_ha_state()
 
-    async def _move(self, target_pos):
-        self._target_position = target_pos
-        self._start_position_percentage = self._current_position
+    async def async_set_cover_position(self, **kwargs):
+        target_pos = kwargs.get(ATTR_POSITION)
+        if target_pos is None or target_pos == self._current_position: return
+
+        self._start_position = self._current_position
+        self._opening = target_pos > self._current_position
+        self._closing = target_pos < self._current_position
         self._movement_start_time = time.time()
         
-        if target_pos > self._current_position:
-            self._opening = True; self._closing = False; self._closed = False
-            diff = target_pos - self._current_position
-            await self._ctli.open()
-        elif target_pos < self._current_position:
-            self._opening = False; self._closing = True; self._closed = False
-            diff = self._current_position - target_pos
-            await self._ctli.close()
-        else: return
+        await self._ctli.set_position(target_pos)
 
+        diff = abs(target_pos - self._current_position)
         travel_time = (diff / 100.0) * MOVEMENT_DURATION
+        
         if target_pos in [0, 100]:
             travel_time += 2.0
             self._stop_task_scheduled = False
@@ -113,18 +103,22 @@ class VektivaSmarwi(CoverEntity):
 
     async def _loop(self, duration, target_pos):
         start = self._movement_start_time
+        start_pos = self._start_position
         while True:
-            if time.time() - start >= duration:
-                if self._stop_task_scheduled:
-                    await self._ctli.stop()
-                    self._current_position = target_pos
-                else:
-                    self._current_position = target_pos
+            elapsed = time.time() - start
+            if elapsed >= duration:
+                if self._stop_task_scheduled: await self._ctli.stop()
+                self._current_position = target_pos
                 break
-            await asyncio.sleep(1)
+            
+            progress = elapsed / duration
+            self._current_position = int(start_pos + (target_pos - start_pos) * progress)
+            self._current_position = max(0, min(100, self._current_position))
             self.async_write_ha_state()
+            await asyncio.sleep(0.5)
+            
         self._opening = False; self._closing = False
-        if self._current_position == 0: self._closed = True
+        self._closed = (self._current_position == 0)
         await self.async_update()
         self.async_write_ha_state()
 
@@ -132,8 +126,10 @@ class VektivaSmarwi(CoverEntity):
         if self._opening or self._closing: return
         try:
             res = await self._ctli.get_status()
-            self._fw = res.get("fw")
             pos = res.get("pos")
-            if pos == 'c': self._current_position = 0; self._closed = True
-            elif pos == 'o': self._current_position = 100; self._closed = False
-        except: pass
+            if pos == 'c':
+                self._current_position = 0; self._closed = True
+            elif pos == 'o':
+                if self._current_position == 0: self._current_position = 100
+                self._closed = False
+        except Exception: pass
